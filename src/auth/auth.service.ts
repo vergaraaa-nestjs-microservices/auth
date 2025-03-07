@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { envs } from 'src/config/envs';
 
 @Injectable()
 export class AuthService extends PrismaClient implements OnModuleInit {
@@ -18,6 +19,37 @@ export class AuthService extends PrismaClient implements OnModuleInit {
   async onModuleInit() {
     await this.$connect();
     this.logger.log('MongoDB connected');
+  }
+
+  verifyToken(token: string) {
+    try {
+      const { sub, iat, exp, ...user } = this.jwtService.verify<
+        JwtPayload & { sub: number; iat: number; exp: number }
+      >(token, {
+        secret: envs.jwtSecret,
+      });
+
+      void sub;
+      void iat;
+      void exp;
+
+      return {
+        user: user,
+        token: this.signJwt(user),
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new RpcException({
+          status: 401,
+          message: error.message,
+        });
+      }
+
+      throw new RpcException({
+        status: 500,
+        message: 'Unknown error in auth.service - Auth Microservice',
+      });
+    }
   }
 
   async registerUser(registerUserDto: RegisterUserDto) {
