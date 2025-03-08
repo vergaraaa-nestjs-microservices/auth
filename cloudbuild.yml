@@ -16,3 +16,6 @@ steps:
         'push',
         'europe-west12-docker.pkg.dev/nestjs-microservices-453105/image-registry/auth',
       ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
